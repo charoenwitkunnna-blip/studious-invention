@@ -1,29 +1,35 @@
-name: Check VM Specs
+name: Gemma 4 E4B Test
 
 on:
   workflow_dispatch:
 
 jobs:
-  check-specs:
+  test-gemma4:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Print CPU Info
-        run: lscpu
-
-      - name: Print Memory Info
-        run: free -h
-
-      - name: Print Disk Info
-        run: df -h
-
-      - name: Print OS Info
-        run: uname -a
-
-      - name: Show CPU Threads Test
-        run: nproc
-
-      - name: Stress Test (Optional)
+      - name: Install dependencies
         run: |
-          echo "Running small CPU test..."
-          time yes > /dev/null & sleep 5; kill $!
+          sudo apt update
+          sudo apt install -y build-essential cmake git wget
+
+      - name: Clone llama.cpp
+        run: |
+          git clone https://github.com/ggerganov/llama.cpp
+          cd llama.cpp
+          make -j$(nproc)
+
+      - name: Download Gemma 4 E4B (Q4)
+        run: |
+          mkdir -p models
+          cd models
+          wget -c -O gemma4.gguf \
+          https://huggingface.co/unsloth/gemma-4-4b-it-GGUF/resolve/main/gemma-4-4b-it-q4_k_m.gguf
+
+      - name: Run Gemma 4
+        run: |
+          cd llama.cpp
+          ./main -m ../models/gemma4.gguf \
+            -p "Explain black holes simply." \
+            -n 200 \
+            -t 4
