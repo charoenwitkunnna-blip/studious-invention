@@ -1,4 +1,4 @@
-name: Gemma 4 E4B Test
+name: Gemma 4 Test (Fixed)
 
 on:
   workflow_dispatch:
@@ -13,11 +13,12 @@ jobs:
           sudo apt update
           sudo apt install -y build-essential cmake git wget
 
-      - name: Clone llama.cpp
+      - name: Clone and build llama.cpp
         run: |
           git clone https://github.com/ggerganov/llama.cpp
           cd llama.cpp
-          make -j$(nproc)
+          cmake -B build
+          cmake --build build --config Release -j$(nproc)
 
       - name: Download Gemma 4 E4B (Q4)
         run: |
@@ -29,7 +30,8 @@ jobs:
       - name: Run Gemma 4
         run: |
           cd llama.cpp
-          ./main -m ../models/gemma4.gguf \
+          ./build/bin/llama-cli \
+            -m ../models/gemma4.gguf \
             -p "Explain black holes simply." \
             -n 200 \
             -t 4
