@@ -1,4 +1,4 @@
-name: Multimodal AI (Image + Chat)
+name: AI WebUI (TEMP NetBird Key)
 
 on:
   workflow_dispatch:
@@ -17,9 +17,10 @@ jobs:
       - name: Install NetBird
         run: curl -fsSL https://pkgs.netbird.io/install.sh | sh
 
-      - name: Connect NetBird
+      # ⚠️ TEMP KEY (1-time use - as requested)
+      - name: Connect NetBird (TEMP KEY)
         run: |
-          sudo netbird up --setup-key C2E7F429-1F54-4FDC-AF61-FC67A5C59500 --allow-server-ssh --enable-ssh-root
+          sudo netbird up --setup-key C2E7F429-1F54-4FDC-AF61-FC67A5C59500
 
       - name: Get NetBird IP
         id: ip
@@ -34,14 +35,16 @@ jobs:
           cmake -B build
           cmake --build build --config Release -j$(nproc)
 
-      - name: Download LLaVA model + mmproj
+      - name: Download LLaVA (PUBLIC MIRROR)
         run: |
           mkdir -p models
           cd models
-          wget -c https://huggingface.co/mys/llava-v1.5-7b-GGUF/resolve/main/llava-v1.5-7b-q4_k_m.gguf
-          wget -c https://huggingface.co/mys/llava-v1.5-7b-GGUF/resolve/main/mmproj-model-f16.gguf
 
-      - name: Start multimodal server
+          wget -c https://huggingface.co/liuhaotian/llava-v1.5-7b-GGUF/resolve/main/llava-v1.5-7b-q4_k_m.gguf
+
+          wget -c https://huggingface.co/liuhaotian/llava-v1.5-7b-GGUF/resolve/main/mmproj-model-f16.gguf
+
+      - name: Start LLaVA server (image + text)
         run: |
           cd llama.cpp
           nohup ./build/bin/llama-server \
@@ -51,18 +54,18 @@ jobs:
             --port 11434 \
             -t 4 > server.log 2>&1 &
 
-      - name: Install Open WebUI
+      - name: Install Open WebUI (chat + file upload)
         run: |
           pip install open-webui
 
-      - name: Start WebUI
+      - name: Start Web UI
         run: |
           nohup open-webui serve --host 0.0.0.0 --port 3000 > webui.log 2>&1 &
 
-      - name: Show access
+      - name: Show access link
         run: |
           echo "===================================="
-          echo "Web UI:"
+          echo "Chat + Image UI:"
           echo "http://${{ steps.ip.outputs.netbird_ip }}:3000"
           echo "===================================="
 
