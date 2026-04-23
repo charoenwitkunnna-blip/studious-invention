@@ -1,4 +1,4 @@
-name: Best AI Model Test
+name: Multimodal AI (Image + Chat)
 
 on:
   workflow_dispatch:
@@ -6,32 +6,65 @@ on:
 jobs:
   run-ai:
     runs-on: ubuntu-latest
+    timeout-minutes: 360
 
     steps:
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y build-essential cmake git wget
+          sudo apt install -y build-essential cmake git wget curl python3 python3-pip
 
-      - name: Clone and build llama.cpp
+      - name: Install NetBird
+        run: curl -fsSL https://pkgs.netbird.io/install.sh | sh
+
+      - name: Connect NetBird
+        run: |
+          sudo netbird up --setup-key YOUR_KEY_HERE
+
+      - name: Get NetBird IP
+        id: ip
+        run: |
+          NB_IP=$(sudo netbird status | grep -oP 'NetBird IP: \K[^\s]+')
+          echo "netbird_ip=$NB_IP" >> $GITHUB_OUTPUT
+
+      - name: Build llama.cpp
         run: |
           git clone https://github.com/ggerganov/llama.cpp
           cd llama.cpp
           cmake -B build
           cmake --build build --config Release -j$(nproc)
 
-      - name: Download Qwen2.5 3B (Q4)
+      - name: Download LLaVA model + mmproj
         run: |
           mkdir -p models
           cd models
-          wget --tries=3 --timeout=30 -c \
-          https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF/resolve/main/qwen2.5-3b-instruct-q4_k_m.gguf
+          wget -c https://huggingface.co/mys/llava-v1.5-7b-GGUF/resolve/main/llava-v1.5-7b-q4_k_m.gguf
+          wget -c https://huggingface.co/mys/llava-v1.5-7b-GGUF/resolve/main/mmproj-model-f16.gguf
 
-      - name: Run model benchmark
+      - name: Start multimodal server
         run: |
           cd llama.cpp
-          ./build/bin/llama-cli \
-            -m ../models/qwen2.5-3b-instruct-q4_k_m.gguf \
-            -p "Explain a black hole in simple terms." \
-            -n 200 \
-            -t 4
+          nohup ./build/bin/llama-server \
+            -m ../models/llava-v1.5-7b-q4_k_m.gguf \
+            --mmproj ../models/mmproj-model-f16.gguf \
+            --host 127.0.0.1 \
+            --port 11434 \
+            -t 4 > server.log 2>&1 &
+
+      - name: Install Open WebUI
+        run: |
+          pip install open-webui
+
+      - name: Start WebUI
+        run: |
+          nohup open-webui serve --host 0.0.0.0 --port 3000 > webui.log 2>&1 &
+
+      - name: Show access
+        run: |
+          echo "===================================="
+          echo "Web UI:"
+          echo "http://${{ steps.ip.outputs.netbird_ip }}:3000"
+          echo "===================================="
+
+      - name: Keep alive
+        run: sleep 6h
