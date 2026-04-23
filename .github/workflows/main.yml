@@ -1,0 +1,29 @@
+name: Check VM Specs
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check-specs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Print CPU Info
+        run: lscpu
+
+      - name: Print Memory Info
+        run: free -h
+
+      - name: Print Disk Info
+        run: df -h
+
+      - name: Print OS Info
+        run: uname -a
+
+      - name: Show CPU Threads Test
+        run: nproc
+
+      - name: Stress Test (Optional)
+        run: |
+          echo "Running small CPU test..."
+          time yes > /dev/null & sleep 5; kill $!
