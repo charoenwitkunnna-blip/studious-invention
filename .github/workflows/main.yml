@@ -1,10 +1,10 @@
-name: Gemma 4 Test (Fixed)
+name: Best AI Model Test
 
 on:
   workflow_dispatch:
 
 jobs:
-  test-gemma4:
+  run-ai:
     runs-on: ubuntu-latest
 
     steps:
@@ -20,18 +20,18 @@ jobs:
           cmake -B build
           cmake --build build --config Release -j$(nproc)
 
-      - name: Download Gemma 4 E4B (Q4)
+      - name: Download Qwen2.5 3B (Q4)
         run: |
           mkdir -p models
           cd models
-          wget -c -O gemma4.gguf \
-          https://huggingface.co/unsloth/gemma-4-4b-it-GGUF/resolve/main/gemma-4-4b-it-q4_k_m.gguf
+          wget --tries=3 --timeout=30 -c \
+          https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF/resolve/main/qwen2.5-3b-instruct-q4_k_m.gguf
 
-      - name: Run Gemma 4
+      - name: Run model benchmark
         run: |
           cd llama.cpp
           ./build/bin/llama-cli \
-            -m ../models/gemma4.gguf \
-            -p "Explain black holes simply." \
+            -m ../models/qwen2.5-3b-instruct-q4_k_m.gguf \
+            -p "Explain a black hole in simple terms." \
             -n 200 \
             -t 4
