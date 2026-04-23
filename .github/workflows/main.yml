@@ -19,7 +19,7 @@ jobs:
 
       - name: Connect NetBird
         run: |
-          sudo netbird up --setup-key YOUR_KEY_HERE
+          sudo netbird up --setup-key C2E7F429-1F54-4FDC-AF61-FC67A5C59500 --allow-server-ssh --enable-ssh-root
 
       - name: Get NetBird IP
         id: ip
